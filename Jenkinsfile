@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Adjust path for Docker if needed
         PATH = "${env.PATH};C:\\Program Files\\Docker\\Docker\\resources\\bin"
     }
 
