@@ -7,8 +7,8 @@ pipeline {
     }
 
     tools {
-        // Assuming PHP and Composer are installed on the agent
-        nodejs 'NodeJS' // Install NodeJS and npm if needed
+        // Ensure NodeJS is correctly installed on the agent
+        nodejs 'NodeJS'
     }
 
     stages {
@@ -18,12 +18,13 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/jihanerached/My-Attendance.git'
             }
         }
+
         stage('Migrate Database') {
             steps {
+                // Run database migrations
                 sh 'php artisan migrate'
             }
         }
-
 
         stage('Install Dependencies') {
             steps {
@@ -57,7 +58,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build the Docker image for Laravel app
+                    // Build the Docker image for the Laravel app
                     docker.build('my-attendance-app')
                 }
             }
@@ -66,8 +67,10 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
-                    // Use Docker Compose to bring up the services (Laravel app, MySQL, etc.)
+                    // Use Docker Compose to bring up the services
                     bat 'docker-compose up -d'
+                    // Optional: Verify that the containers are running
+                    bat 'docker ps'
                 }
             }
         }
