@@ -6,7 +6,6 @@ pipeline {
     }
 
     tools {
-        // Ensure NodeJS is correctly installed on the agent
         nodejs 'NodeJS'
     }
 
