@@ -30,7 +30,7 @@ RUN composer create-project --prefer-dist laravel/laravel laravel-app
 RUN chown -R www-data:www-data /var/www/laravel-app/storage \
     && chown -R www-data:www-data /var/www/laravel-app/bootstrap/cache
 
-# Expose port 80
+
 EXPOSE 80
 
 # Start Apache in the foreground
