@@ -18,6 +18,12 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/jihanerached/My-Attendance.git'
             }
         }
+        stage('Migrate Database') {
+            steps {
+                sh 'php artisan migrate'
+            }
+        }
+
 
         stage('Install Dependencies') {
             steps {
