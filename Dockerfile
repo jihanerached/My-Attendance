@@ -1,37 +1,89 @@
-# Use the official PHP image with Apache
-FROM php:8.1-apache
+pipeline {
+    agent any
 
-# Install necessary PHP extensions
-RUN apt-get update && apt-get install -y \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    zip \
-    unzip \
-    git \
-    curl \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd \
-    && docker-php-ext-install pdo pdo_mysql
+    environment {
+        // Adjust path for Docker if needed
+        PATH = "${env.PATH};C:\\Program Files\\Docker\\Docker\\resources\\bin"
+    }
 
-# Enable Apache rewrite module
-RUN a2enmod rewrite
+    tools {
+        // Assuming PHP and Composer are installed on the agent
+        nodejs 'NodeJS' // Install NodeJS and npm if needed
+    }
 
-# Set the working directory to /var/www
-WORKDIR /var/www
+    stages {
+        stage('Checkout') {
+            steps {
+                // Clone the GitHub repository
+                git branch: 'main', url: 'https://github.com/jihanerached/My-Attendance.git'
+            }
+        }
 
-# Install Composer globally
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    // Install Composer dependencies
+                    bat 'composer install'
+                    // Install npm dependencies
+                    bat 'npm install'
+                    // Build Laravel assets
+                    bat 'npm run build'
+                }
+            }
+        }
 
-# Create a new Laravel project (this will be run during build)
-RUN composer create-project --prefer-dist laravel/laravel laravel-app
+        stage('Test') {
+            steps {
+                script {
+                    // Run Laravel unit tests (PHPUnit)
+                    bat 'vendor\\bin\\phpunit'
+                }
 
-# Set permissions for the Laravel directory
-RUN chown -R www-data:www-data /var/www/laravel-app/storage \
-    && chown -R www-data:www-data /var/www/laravel-app/bootstrap/cache
+                post {
+                    always {
+                        // Archive the test results
+                        junit '**/test-results/*.xml'
+                    }
+                }
+            }
+        }
 
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build the Docker image for Laravel app
+                    docker.build('my-attendance-app')
+                }
+            }
+        }
 
-EXPOSE 80
+        stage('Run Docker Container') {
+            steps {
+                script {
+                    // Use Docker Compose to bring up the services (Laravel app, MySQL, etc.)
+                    bat 'docker-compose up -d'
+                }
+            }
+        }
 
-# Start Apache in the foreground
-CMD ["apache2-foreground"]
+        stage('Deploy') {
+            steps {
+                // Notify that the app is deployed and accessible
+                echo 'Deployment completed. Your Laravel app is accessible at http://localhost:8000'
+            }
+        }
+    }
+
+    post {
+        always {
+            // Clean up workspace after the build
+            cleanWs()
+        }
+        failure {
+            echo 'Build or deployment failed.'
+        }
+        success {
+            echo 'Build and deployment successful.'
+        }
+    }
+}
